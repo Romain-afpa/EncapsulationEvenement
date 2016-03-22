@@ -2,7 +2,6 @@ package com.evenement.encapsulation;
 
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;

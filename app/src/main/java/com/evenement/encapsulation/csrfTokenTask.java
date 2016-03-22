@@ -7,6 +7,7 @@ import android.util.Log;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,6 +25,9 @@ import javax.net.ssl.SSLContext;
 public class csrfTokenTask extends AsyncTask<String, String, String> {
 
     private Context context;
+    private HttpsURLConnection connection = null;
+    private URL url = null;
+    private InputStream stream = null;
 
     public csrfTokenTask(Context context) {
         this.context = context;
@@ -43,8 +47,10 @@ public class csrfTokenTask extends AsyncTask<String, String, String> {
     protected void onPostExecute(String token) {
         super.onPostExecute(token);
 
-        Log.d("aa", token + "");
-
+        if (connection != null) {
+             connection.disconnect();
+        }
+        Log.d("token", token);
 
     }
 
@@ -77,33 +83,29 @@ public class csrfTokenTask extends AsyncTask<String, String, String> {
 
     private InputStream getConnectionStream(String uri) {
 
-        HttpsURLConnection connection = null;
-        URL url = null;
-        InputStream stream = null;
+        assignTrustManager();
 
         try {
             url = new URL(uri);
+            Log.d("aa",url.getHost()+ url.getPath()+": "+ url.getProtocol()+", " + url.getDefaultPort());
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
         try {
 
-            assignTrustManager();
             connection = (HttpsURLConnection) url.openConnection();
-
+Log.d("aa", connection.getHostnameVerifier()+"");
             connection.setDoInput(true);
             connection.setDoOutput(true);
 
 
             connection.connect();
+
             stream = connection.getInputStream();
 
         } catch (IOException e) {
             e.printStackTrace();
-        }
 
-        if (connection != null) {
-            connection.disconnect();
         }
 
         return stream;
@@ -116,12 +118,10 @@ public class csrfTokenTask extends AsyncTask<String, String, String> {
 
         TrustManager[] trustAllCerts = new TrustManager[]{manager};
 
-
         try {
             SSLContext sc = SSLContext.getInstance("TLS");
 
             sc.init(null, trustAllCerts, new java.security.SecureRandom());
-
             HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
 
         } catch (Exception e) {
@@ -132,9 +132,14 @@ public class csrfTokenTask extends AsyncTask<String, String, String> {
     private String getToken(String html) {
 
         Document doc = Jsoup.parse(html);
+    Log.d("aa", html);
 
-        Element tokenTag = doc.getElementById("signin__csrf_token");
+        Elements tokenTag = doc.getElementsByAttributeValue("id", "signin__csrf_token");
 
-        return tokenTag.attr("value");
+        Log.d("aa", tokenTag.toString());
+
+        String token = tokenTag.attr("value");
+        Log.d("aa", tokenTag.attr("id"));
+        return token;
     }
 }//taskClass

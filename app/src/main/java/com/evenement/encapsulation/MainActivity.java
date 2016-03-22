@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        new csrfTokenTask(MainActivity.this).execute("https://dev3.libre-informatique.fr/tck.php/");
+        new csrfTokenTask(MainActivity.this).execute("https://dev3.libre-informatique.fr/tck.php/ticket/control");
 
         //actionbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
