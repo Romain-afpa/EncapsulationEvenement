@@ -1,12 +1,12 @@
 package com.evenement.encapsulation;
 
-import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
+import android.webkit.CookieManager;
+import android.webkit.WebView;
+import android.widget.TextView;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.BufferedReader;
@@ -24,13 +24,17 @@ import javax.net.ssl.SSLContext;
  */
 public class csrfTokenTask extends AsyncTask<String, String, String> {
 
-    private Context context;
+    private TextView tokenField;
     private HttpsURLConnection connection = null;
     private URL url = null;
     private InputStream stream = null;
+    private WebView webView;
+    private String csrfToken;
+    private String formAction;
 
-    public csrfTokenTask(Context context) {
-        this.context = context;
+    public csrfTokenTask(WebView webView) {
+
+        this.webView = webView;
     }
 
 
@@ -39,19 +43,23 @@ public class csrfTokenTask extends AsyncTask<String, String, String> {
 
         String html = readStream(getConnectionStream(params[0]));
 
-        return getToken(html);
+        parseResponse(html);
 
+        return "";
     }
 
     @Override
-    protected void onPostExecute(String token) {
-        super.onPostExecute(token);
+    protected void onPostExecute(String useless) {
+        super.onPostExecute(useless);
 
         if (connection != null) {
              connection.disconnect();
         }
-        Log.d("token", token);
 
+        String queryString = "signin[username]=librinfo&signin[password]=cR4MP0u=€&signin[_csrf_token]=" + csrfToken;
+
+        webView.postUrl("https://dev3.libre-informatique.fr" + formAction, queryString.getBytes());
+        webView.loadUrl("https://dev3.libre-informatique.fr/tck.php/ticket/control");
     }
 
     private String readStream(InputStream stream) {
@@ -83,25 +91,38 @@ public class csrfTokenTask extends AsyncTask<String, String, String> {
 
     private InputStream getConnectionStream(String uri) {
 
-        assignTrustManager();
-
         try {
+
             url = new URL(uri);
-            Log.d("aa",url.getHost()+ url.getPath()+": "+ url.getProtocol()+", " + url.getDefaultPort());
+
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
+
+        assignTrustManager();
+
         try {
+            String cookies = CookieManager.getInstance().getCookie(uri);
 
             connection = (HttpsURLConnection) url.openConnection();
-Log.d("aa", connection.getHostnameVerifier()+"");
             connection.setDoInput(true);
-            connection.setDoOutput(true);
+            connection.setRequestMethod("GET");
 
+            if (cookies != null)
+                connection.setRequestProperty("Cookie", cookies);
 
             connection.connect();
 
-            stream = connection.getInputStream();
+            switch(connection.getResponseCode()) {
+
+                case 200:
+                    stream = connection.getInputStream();
+                    break;
+
+                default:
+                    stream = connection.getErrorStream();
+                    break;
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -129,17 +150,18 @@ Log.d("aa", connection.getHostnameVerifier()+"");
         }
     }
 
-    private String getToken(String html) {
+    private void parseResponse(String html) {
 
         Document doc = Jsoup.parse(html);
-    Log.d("aa", html);
 
-        Elements tokenTag = doc.getElementsByAttributeValue("id", "signin__csrf_token");
+        Elements tokenTag = doc.select("#signin__csrf_token");
+        csrfToken = tokenTag.attr("value");
 
-        Log.d("aa", tokenTag.toString());
+        Elements formTag = doc.select(".login form");
+        formAction = formTag.attr("action");
+    }
 
-        String token = tokenTag.attr("value");
-        Log.d("aa", tokenTag.attr("id"));
-        return token;
+    private void getSessionCookie() {
+
     }
 }//taskClass

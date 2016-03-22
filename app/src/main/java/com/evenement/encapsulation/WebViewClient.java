@@ -13,18 +13,11 @@ import android.webkit.WebView;
  */
 public class WebViewClient extends android.webkit.WebViewClient {
 
-    private Context context;
-
-    public WebViewClient(Context context){
-
-        this.context = context;
-    }
 
     @Override
     public void onReceivedSslError(final WebView view, final SslErrorHandler handler, SslError error) {
         Log.d("CHECK", "onReceivedSslError");
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        AlertDialog alertDialog = builder.create();
+
         String message = "Certificate error.";
         switch (error.getPrimaryError()) {
             case SslError.SSL_UNTRUSTED:
@@ -41,23 +34,7 @@ public class WebViewClient extends android.webkit.WebViewClient {
                 break;
         }
         message += " Do you want to continue anyway?";
-        alertDialog.setTitle("SSL Certificate Error");
-        alertDialog.setMessage(message);
-        alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-                handler.proceed();
-            }
-        });
-        alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-                handler.cancel();
-            }
-        });
-        alertDialog.show();
+       handler.proceed();
     }
 
 

@@ -9,21 +9,26 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.webkit.CookieSyncManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+
+import java.net.CookieHandler;
+import java.net.CookieManager;
 
 public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private WebSettings settings;
-    private final String queryString = "signin[username]=librinfo&signin[password]=cR4MP0u=€&signin[_csrf_token]=239c55ff0ea4997e8dca42c37fb40c29";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
-        new csrfTokenTask(MainActivity.this).execute("https://dev3.libre-informatique.fr/tck.php/ticket/control");
+        CookieHandler.setDefault(new CookieManager());
+        CookieSyncManager.createInstance(MainActivity.this);
+
+        setContentView(R.layout.activity_main);
 
         //actionbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -42,21 +47,15 @@ public class MainActivity extends AppCompatActivity {
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(new navItemListener(MainActivity.this, drawer));
 
-        //Webview
-//        webView = (WebView) findViewById(R.id.webview);
-//        settings = webView.getSettings();
-//
-//        settings.setJavaScriptEnabled(true);
-//        settings.setDomStorageEnabled(true);
-//
-//        webView.setWebViewClient(new WebViewClient(MainActivity.this));
-//        webView.postUrl("https://dev3.libre-informatique.fr/tck.php/login", queryString.getBytes());
-        //webView.loadUrl("https://dev3.libre-informatique.fr/tck.php/ticket/control/");
 
+        configWebview();
+
+        //tâche de connexion
+        new csrfTokenTask(webView).execute("https://dev3.libre-informatique.fr/tck.php/ticket/control");
 
     }
 
-        @Override
+    @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
@@ -86,5 +85,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void configWebview(){
+
+        webView = (WebView) findViewById(R.id.webview);
+        settings = webView.getSettings();
+
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+
+        webView.setWebViewClient(new WebViewClient());
     }
 }
