@@ -32,24 +32,11 @@ public class csrfTokenTask extends AsyncTask<String, String, String> {
 
     @Override
     protected String doInBackground(String... params) {
-        TrustManager manager = new TrustManager();
 
-        TrustManager[] trustAllCerts = new TrustManager[]{manager};
-
-
-        try {
-            SSLContext sc = SSLContext.getInstance("TLS");
-
-            sc.init(null, trustAllCerts, new java.security.SecureRandom());
-
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         String html = readStream(getConnectionStream(params[0]));
 
         return getToken(html);
+
     }
 
     @Override
@@ -101,9 +88,7 @@ public class csrfTokenTask extends AsyncTask<String, String, String> {
         }
         try {
 
-
-            assignTrustManager(connection);
-
+            assignTrustManager();
             connection = (HttpsURLConnection) url.openConnection();
 
             connection.setDoInput(true);
@@ -125,19 +110,31 @@ public class csrfTokenTask extends AsyncTask<String, String, String> {
 
     }
 
-    private void assignTrustManager(HttpsURLConnection con) {
+    private void assignTrustManager() {
+
+        TrustManager manager = new TrustManager();
+
+        TrustManager[] trustAllCerts = new TrustManager[]{manager};
 
 
+        try {
+            SSLContext sc = SSLContext.getInstance("TLS");
+
+            sc.init(null, trustAllCerts, new java.security.SecureRandom());
+
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private String getToken(String html){
+    private String getToken(String html) {
 
         Document doc = Jsoup.parse(html);
 
         Element tokenTag = doc.getElementById("signin__csrf_token");
 
-        String token = tokenTag.attr("value");
-
-        return token;
+        return tokenTag.attr("value");
     }
 }//taskClass
