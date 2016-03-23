@@ -1,31 +1,39 @@
 package com.evenement.encapsulation;
 
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.CookieSyncManager;
+import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import java.net.CookieHandler;
-import java.net.CookieManager;
 
 public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private WebSettings settings;
+    private CookieManager cookieManager;
+    private LoginTask loginTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        CookieHandler.setDefault(new CookieManager());
+
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+
+        CookieHandler.setDefault(new java.net.CookieManager());
         CookieSyncManager.createInstance(MainActivity.this);
 
         setContentView(R.layout.activity_main);
@@ -47,11 +55,30 @@ public class MainActivity extends AppCompatActivity {
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(new navItemListener(MainActivity.this, drawer));
 
-
         configWebview();
 
-        //tâche de connexion
-        new csrfTokenTask(webView).execute("https://dev3.libre-informatique.fr/tck.php/ticket/control");
+        loginTask = new LoginTask(webView);
+
+        webView.setWebViewClient(new WebViewClient());
+
+        cookieManager = CookieManager.getInstance();
+        String cookie = cookieManager.getCookie("https://dev3.libre-informatique.fr");
+
+        //if (!cookie.contains("symfony")){
+
+//Log.d("aa", "cookie absent");
+            //tâche de connexion
+
+           loginTask.execute("https://dev3.libre-informatique.fr/tck.php/ticket/control");
+        //}else{
+
+           // Log.d("aa", "cookie présent");
+
+        //}
+        CookieSyncManager.getInstance().sync();
+
+       // webView.loadUrl("https://dev3.libre-informatique.fr/tck.php/ticket/control");
+
 
     }
 
@@ -94,7 +121,5 @@ public class MainActivity extends AppCompatActivity {
 
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-
-        webView.setWebViewClient(new WebViewClient());
     }
 }
